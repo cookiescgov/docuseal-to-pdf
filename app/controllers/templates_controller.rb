@@ -119,7 +119,7 @@ class TemplatesController < ApplicationController
 
     pdf_data = document.blob.download
     pdf = HexaPDF::Document.new(io: StringIO.new(pdf_data))
-    form = pdf.acro_form || pdf.create_acro_form
+    form = pdf.acro_form
 
     @template.fields.each do |field|
       next if field['areas'].blank?
@@ -134,25 +134,24 @@ class TemplatesController < ApplicationController
         width = area['w'] * page.box.width
         height = area['h'] * page.height
 
-        # DocuSeal y-coordinate is from the top, PDF y-coordinate is from the bottom.
-        # We also need to adjust for the field height.
         rect_y1 = y - height
         rect_y2 = y
         rect = [x, rect_y1, x + width, rect_y2]
 
         field_name = field['name'] || field['uuid']
+        field_widget = nil
 
         case field['type']
         when 'text', 'date', 'number'
-          form.add_field(field_name, :text, page:, rect:)
+          field_widget = form.create_text_field(field_name, rect:)
         when 'checkbox'
-          form.add_field(field_name, :check_box, page:, rect:)
+          field_widget = form.create_check_box(field_name, rect:)
         when 'radio'
-          # For radio buttons, we need to group them. HexaPDF handles this by using the same name.
-          # We'll create a field for each area.
-          option_name = area['option_uuid'] # Assuming option_uuid can serve as the value
-          form.add_field(field_name, :radio_button, page:, rect:, value: option_name)
+          option_name = area['option_uuid']
+          field_widget = form.create_radio_button(field_name, option_name, rect:)
         end
+
+        page.add_annotation(field_widget) if field_widget
       end
     end
 
