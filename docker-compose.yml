@@ -3,7 +3,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    image: docuseal/docuseal:latest
+    build: .
     ports:
       - 3011:3000
     volumes:
