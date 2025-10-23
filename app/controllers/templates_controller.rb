@@ -113,6 +113,10 @@ class TemplatesController < ApplicationController
     redirect_back(fallback_location: root_path, notice:)
   end
 
+  def download_fillable
+    render plain: "The route and controller are working."
+  end
+
   private
 
   def template_params
