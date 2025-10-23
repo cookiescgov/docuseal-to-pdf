@@ -96,7 +96,8 @@ Rails.application.routes.draw do
   resources :template_sharings_testing, only: %i[create]
   resources :templates, only: %i[index], controller: 'templates_dashboard'
   resources :submissions_filters, only: %i[show], param: 'name'
-  resources :templates, only: %i[new create edit update show destroy] do
+  resources :templates, only: %i[index show new edit create update destroy] do
+    get :download_fillable, on: :member
     resource :debug, only: %i[show], controller: 'templates_debug' if Rails.env.development?
     resources :documents, only: %i[create], controller: 'template_documents'
     resources :clone_and_replace, only: %i[create], controller: 'templates_clone_and_replace'
