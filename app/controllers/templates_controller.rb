@@ -139,19 +139,21 @@ class TemplatesController < ApplicationController
         rect = [x, rect_y1, x + width, rect_y2]
 
         field_name = field['name'] || field['uuid']
-        field_widget = nil
+        new_field = nil
 
         case field['type']
         when 'text', 'date', 'number'
-          field_widget = form.create_text_field(field_name, rect:)
+          new_field = form.create_text_field(field_name)
         when 'checkbox'
-          field_widget = form.create_check_box(field_name, rect:)
+          new_field = form.create_check_box(field_name)
         when 'radio'
           option_name = area['option_uuid']
-          field_widget = form.create_radio_button(field_name, option_name, rect:)
+          new_field = form.create_radio_button(field_name, option_name)
         end
 
-        page.add_annotation(field_widget) if field_widget
+        if new_field
+          page.add_annotation(new_field.widget(rect: rect))
+        end
       end
     end
 
