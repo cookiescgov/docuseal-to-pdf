@@ -78,6 +78,12 @@
             <span><%= t('edit') %></span>
           </span>
         <% end %>
+        <%= link_to download_fillable_template_path(template), class: 'btn btn-outline btn-sm flex-1', data: { turbo: false } do %>
+          <span class="flex items-center justify-center space-x-2">
+            <%= svg_icon('download', class: 'w-6 h-6') %>
+            <span><%= t('download_fillable') %></span>
+          </span>
+        <% end %>
       <% elsif can?(:read, template) && !template.archived_at? %>
         <%= link_to template_preview_path(template), class: 'btn btn-outline btn-sm flex-1' do %>
           <span class="flex items-center justify-center space-x-2">
