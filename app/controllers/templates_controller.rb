@@ -114,7 +114,51 @@ class TemplatesController < ApplicationController
   end
 
   def download_fillable
-    render plain: "The route and controller are working."
+    document = @template.schema_documents.first
+    raise ActiveRecord::RecordNotFound, 'Source document not found for this template' unless document
+
+    pdf_data = document.blob.download
+    pdf = HexaPDF::Document.new(io: StringIO.new(pdf_data))
+    form = pdf.acro_form || pdf.create_acro_form
+
+    @template.fields.each do |field|
+      next if field['areas'].blank?
+
+      field['areas'].each do |area|
+        page = pdf.pages[area['page']]
+        next unless page
+
+        page_height = page.box.height
+        x = area['x'] * page.box.width
+        y = page_height - (area['y'] * page_height)
+        width = area['w'] * page.box.width
+        height = area['h'] * page.height
+
+        # DocuSeal y-coordinate is from the top, PDF y-coordinate is from the bottom.
+        # We also need to adjust for the field height.
+        rect_y1 = y - height
+        rect_y2 = y
+        rect = [x, rect_y1, x + width, rect_y2]
+
+        field_name = field['name'] || field['uuid']
+
+        case field['type']
+        when 'text', 'date', 'number'
+          form.add_field(field_name, :text, page:, rect:)
+        when 'checkbox'
+          form.add_field(field_name, :check_box, page:, rect:)
+        when 'radio'
+          # For radio buttons, we need to group them. HexaPDF handles this by using the same name.
+          # We'll create a field for each area.
+          option_name = area['option_uuid'] # Assuming option_uuid can serve as the value
+          form.add_field(field_name, :radio_button, page:, rect:, value: option_name)
+        end
+      end
+    end
+
+    output_io = StringIO.new
+    pdf.write(output_io)
+    send_data output_io.string, filename: "#{@template.name}-fillable.pdf", type: 'application/pdf'
   end
 
   private
